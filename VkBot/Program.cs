@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using VkNet.Model;
 using VkNet.Model.GroupUpdate;
 
@@ -8,6 +9,12 @@ namespace VkBot
     {
         static void Main(string[] args)
         {
+            using (StreamWriter sw = new StreamWriter("asds.txt"))
+            {
+                string str = PdfTextExtractor1.pdfText("2022-09-26_po_gruppam.pdf");
+                sw.WriteLine(str);
+            }
+            string text1 = File.ReadAllText("asds.txt");
             try { LaunchingBot(); }
             catch { } // TODO: Запись в log
         }
