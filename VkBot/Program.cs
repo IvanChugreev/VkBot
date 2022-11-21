@@ -9,14 +9,21 @@ namespace VkBot
     {
         static void Main(string[] args)
         {
-            using (StreamWriter sw = new StreamWriter("asds.txt"))
-            {
-                string str = PdfTextExtractor1.pdfText("2022-09-26_po_gruppam.pdf");
-                sw.WriteLine(str);
-            }
-            string text1 = File.ReadAllText("asds.txt");
+            int h = 0;
             try { LaunchingBot(); }
             catch { } // TODO: Запись в log
+            Week wek = new Week() { Parity = false };
+            foreach (var item in wek.Days)
+            {
+                foreach (var item2 in item.Lessons)
+                {
+                    Console.WriteLine(item2.Name + "123");
+                    h++;
+                    
+                }
+            }
+            Console.WriteLine(h);
+            Console.WriteLine();
         }
 
         static void LaunchingBot()
