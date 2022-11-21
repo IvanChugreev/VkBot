@@ -10,8 +10,5 @@ namespace VkBot
         DateTime NextLesson(long? chatId);
 
         bool NewTimetable(string[] timetable);
-
-
-
     }
 }

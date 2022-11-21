@@ -9,13 +9,7 @@ namespace VkBot
     {
         static void Main(string[] args)
         {
-            try { LaunchingBot(); }
-            catch { } // TODO: Запись в log
-           
-            Week Chisl = WeekLoader.GetFromFile("Novy_textovy_dokument_4.txt");
-            
-            Chisl.Output();
-            Console.WriteLine();
+            LaunchingBot();
         }
 
         static void LaunchingBot()
