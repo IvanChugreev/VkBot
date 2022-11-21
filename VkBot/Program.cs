@@ -9,20 +9,12 @@ namespace VkBot
     {
         static void Main(string[] args)
         {
-            int h = 0;
             try { LaunchingBot(); }
             catch { } // TODO: Запись в log
-            Week wek = new Week() { Parity = false };
-            foreach (var item in wek.Days)
-            {
-                foreach (var item2 in item.Lessons)
-                {
-                    Console.WriteLine(item2.Name + "123");
-                    h++;
-                    
-                }
-            }
-            Console.WriteLine(h);
+           
+            Week Chisl = WeekLoader.GetFromFile("Novy_textovy_dokument_4.txt");
+            
+            Chisl.Output();
             Console.WriteLine();
         }
 
