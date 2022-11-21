@@ -16,8 +16,6 @@ namespace VkBot
         Суббота
     }
     
-   
-    
     public class Week
     {
         public bool Parity { get; set; }
@@ -57,11 +55,6 @@ namespace VkBot
                 }
                 i++;
             }
-        }
-       
-        
-
-    }
-
-    
+        }      
+    }    
 }
