@@ -14,12 +14,15 @@ namespace VkBot
 
         public static ulong GroupId { get; }
 
-        public static LongPollServerResponse ServerResponse { get; }
-
         public static BotsLongPollHistoryResponse HistoryResponse
         {
-            get => Api.Groups.GetBotsLongPollHistory( 
-                new BotsLongPollHistoryParams { Server = ServerResponse.Server, Ts = ServerResponse.Ts, Key = ServerResponse.Key, Wait = 25 });
+            get
+            {
+                LongPollServerResponse serverResponse = Api.Groups.GetLongPollServer(GroupId);
+
+                return Api.Groups.GetBotsLongPollHistory(
+                    new BotsLongPollHistoryParams { Server = serverResponse.Server, Ts = serverResponse.Ts, Key = serverResponse.Key, Wait = 25 });
+            }
         }
 
         static VkApiFacade()
@@ -34,11 +37,9 @@ namespace VkBot
             Api.Authorize(new ApiAuthParams() { AccessToken = setting[0] });
 
             GroupId = ulong.Parse(setting[1]);
-
-            ServerResponse = Api.Groups.GetLongPollServer(GroupId);
         }
 
-        public static long SendTextMessege(long recipientId, string text)
+        public static long SendTextMessege(long? recipientId, string text)
             => Api.Messages.Send(new MessagesSendParams { RandomId = randomId.Next(), Message = text, PeerId = recipientId });
     }
 }
