@@ -11,13 +11,14 @@ namespace VkBot
 {
     static class BotCommands
     {
-        private static ICommunicationProtocol dataStore;
+        private static readonly ICommunicationProtocol dataStore;
         private static readonly Dictionary<long?, Timer> timerByIdDict;
         public static readonly Dictionary<string, Action<GroupUpdate>> CommandByMsgDict;
 
         static BotCommands()
         {
-            // TODO: дописать инициализацию dataStore 
+            // TODO: возможность выбрать тип хранения данных
+            dataStore = new FileStorageSystem();
 
             timerByIdDict = new Dictionary<long?, Timer>();
 
@@ -27,7 +28,7 @@ namespace VkBot
                 [".start"] = Start,
                 [".stop"] = Stop,
                 [".new"] = NewTimetable,
-                [".chg"] = ChangeDayTimetable,
+                //[".chg"] = ChangeDayTimetable,
             };
         }
 
@@ -50,30 +51,30 @@ namespace VkBot
         }
 
         private static void Help(GroupUpdate update) =>
-            VkApiFacade.SendTextMessege(ParseGroupUpdateIntoMessage(update).ChatId, 
+            VkApiFacade.SendTextMessege(ParseGroupUpdateIntoMessage(update).PeerId, 
                 string.Join("\r\n", new string[] {
                 "Команды бота:",
                 ".help - рассказать про все команды бота",
                 ".new - сохранить ваше расписание (вместе с этой командой нужно передать .txt файл вашего расписания)",
                 ".start - подписаться на рассылку уведомлений",
                 ".stop - отписаться от рассылки уведомлений",
-                ".chg - изменить что-то в рсаписании"}));
+                ".chg - изменить что-то в рсаписании(пока не работает)"}));
 
         private static void Start(GroupUpdate update)
         {
             Message message = ParseGroupUpdateIntoMessage(update);
 
-            if (timerByIdDict.ContainsKey(message.ChatId))
-                VkApiFacade.SendTextMessege(message.ChatId, "Вы уже подписаны на рассылку расписания");
+            if (timerByIdDict.ContainsKey(message.PeerId))
+                VkApiFacade.SendTextMessege(message.PeerId, "Вы уже подписаны на рассылку расписания");
             else
             {
-                Timer timer = new Timer((dataStore.NextLesson(message.ChatId) - DateTime.Now).TotalMilliseconds);
+                Timer timer = new Timer((dataStore.NextLesson(message.PeerId) - DateTime.Now).TotalMilliseconds);
 
                 timer.Start();
 
-                timerByIdDict.Add(message.ChatId, timer);
+                timerByIdDict.Add(message.PeerId, timer);
 
-                VkApiFacade.SendTextMessege(message.ChatId, "Вы подписаны на рассылку расписания");
+                VkApiFacade.SendTextMessege(message.PeerId, "Вы подписаны на рассылку расписания");
             }
         }
 
@@ -81,16 +82,16 @@ namespace VkBot
         {
             Message message = ParseGroupUpdateIntoMessage(update);
 
-            if (timerByIdDict.ContainsKey(message.ChatId))
+            if (timerByIdDict.ContainsKey(message.PeerId))
             {
-                timerByIdDict[message.ChatId].Stop();
+                timerByIdDict[message.PeerId].Stop();
 
-                timerByIdDict.Remove(message.ChatId);
+                timerByIdDict.Remove(message.PeerId);
 
-                VkApiFacade.SendTextMessege(message.ChatId, "Вы отказались от рассылки расписания");
+                VkApiFacade.SendTextMessege(message.PeerId, "Вы отказались от рассылки расписания");
             }
             else
-                VkApiFacade.SendTextMessege(message.ChatId, "Вы не подписаны на рассылку расписания");
+                VkApiFacade.SendTextMessege(message.PeerId, "Вы не подписаны на рассылку расписания");
         }
 
         private static void NewTimetable(GroupUpdate update)

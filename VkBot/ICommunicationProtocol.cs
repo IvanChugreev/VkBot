@@ -9,6 +9,6 @@ namespace VkBot
         // TODO: добавить event для нового дня и недели
         DateTime NextLesson(long? chatId);
 
-        bool NewTimetable(string[] timetable);
+        bool NewTimetable(long? chatId, string[] timetable);
     }
 }
