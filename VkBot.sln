@@ -3,7 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32825.248
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VkBot", "VkBot\VkBot.csproj", "{DD831EBA-78FF-411B-BB1C-72B97626A84C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VkBot", "VkBot\VkBot.csproj", "{DD831EBA-78FF-411B-BB1C-72B97626A84C}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TypesUsedByBot", "TypesUsedByBot\TypesUsedByBot.csproj", "{5AB9472E-C26C-4B9C-B4D0-AAA9056D38E1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VkApiAdapterForBot", "VkApiAdapter\VkApiAdapterForBot.csproj", "{5D3D3484-FB7D-4B87-8E79-0D951A47C7EA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +19,14 @@ Global
 		{DD831EBA-78FF-411B-BB1C-72B97626A84C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DD831EBA-78FF-411B-BB1C-72B97626A84C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DD831EBA-78FF-411B-BB1C-72B97626A84C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5AB9472E-C26C-4B9C-B4D0-AAA9056D38E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5AB9472E-C26C-4B9C-B4D0-AAA9056D38E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5AB9472E-C26C-4B9C-B4D0-AAA9056D38E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5AB9472E-C26C-4B9C-B4D0-AAA9056D38E1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5D3D3484-FB7D-4B87-8E79-0D951A47C7EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5D3D3484-FB7D-4B87-8E79-0D951A47C7EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5D3D3484-FB7D-4B87-8E79-0D951A47C7EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5D3D3484-FB7D-4B87-8E79-0D951A47C7EA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

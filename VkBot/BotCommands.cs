@@ -1,114 +1,106 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net;
 using System.Timers;
-using VkNet.Model;
-using VkNet.Model.Attachments;
-using VkNet.Model.GroupUpdate;
+using TypesUsedByBot;
 
 namespace VkBot
 {
-    static class BotCommands
+    // T - тип данных для Id чата
+    class BotCommands<T>
     {
-        private static readonly ICommunicationProtocol dataStore;
-        private static readonly Dictionary<long?, Timer> timerByIdDict;
-        public static readonly Dictionary<string, Action<GroupUpdate>> CommandByMsgDict;
+        private readonly IMessengerApi<T> messengerApi;
+        private readonly IRepositoryApi<T> repositoryApi;
+        private readonly Dictionary<T, Timer> timerByIdDict;
+        // TODO: переделать это в свойство
+        public readonly Dictionary<string, Action<MessageParams<T>>> CommandByMsgDict;
 
-        static BotCommands()
+        public BotCommands(IMessengerApi<T> messengerApi, IRepositoryApi<T> repositoryApi)
         {
-            // TODO: возможность выбрать тип хранения данных
-            dataStore = new FileStorageSystem();
+            this.messengerApi = messengerApi;
 
-            timerByIdDict = new Dictionary<long?, Timer>();
+            this.repositoryApi = repositoryApi;
 
-            CommandByMsgDict = new Dictionary<string, Action<GroupUpdate>>()
+            timerByIdDict = new Dictionary<T, Timer>();
+
+            CommandByMsgDict = new Dictionary<string, Action<MessageParams<T>>>()
             {
-                [".help"] = Help,
-                [".start"] = Start,
-                [".stop"] = Stop,
-                [".new"] = NewTimetable,
-                //[".chg"] = ChangeDayTimetable,
+                [".help"] = HelpCommand,
+                [".start"] = StartCommand,
+                [".stop"] = StopCommand,
+                [".new"] = NewTimetableCommand,
+                [".chg"] = ChangeDayTimetableCommand,
             };
         }
 
-        public static void ReactToUpdate(GroupUpdate update)
-        {
-            // TODO: Дописать реакцию при возникновении ошибки
-            if (update.Instance is MessageNew newMessage && 
-                CommandByMsgDict.ContainsKey(newMessage.Message.Text.Split(new char[] { ' ', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)[0]))
-                CommandByMsgDict[newMessage.Message.Text](update);
-        }
+        //public void ReactToUpdate(MessageParams<T> message)
+        //{
+        //    // TODO: Дописать реакцию при возникновении ошибки
 
-        private static Message ParseGroupUpdateIntoMessage(GroupUpdate update) 
-            => ((MessageNew)update.Instance).Message;
+        //    if (update.Instance is MessageNew newMessage &&
+        //        CommandByMsgDict.ContainsKey(newMessage.Message.Text.Split(new char[] { ' ', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)[0]))
+        //        CommandByMsgDict[newMessage.Message.Text](update);
+        //}
 
-        private static void DownloadDocumentFromVk(Document document)
-        {
-            using WebClient client = new WebClient();
-
-            client.DownloadFile(document.Uri, document.Title);
-        }
-
-        private static void Help(GroupUpdate update) =>
-            VkApiFacade.SendTextMessege(ParseGroupUpdateIntoMessage(update).PeerId, 
+        private void HelpCommand(MessageParams<T> message)
+            => messengerApi.SendTextMessege(
+                message.ChatId,
                 string.Join("\r\n", new string[] {
-                "Команды бота:",
-                ".help - рассказать про все команды бота",
-                ".new - сохранить ваше расписание (вместе с этой командой нужно передать .txt файл вашего расписания)",
-                ".start - подписаться на рассылку уведомлений",
-                ".stop - отписаться от рассылки уведомлений",
-                ".chg - изменить что-то в рсаписании(пока не работает)"}));
+                        "Команды бота:",
+                        ".help - рассказать про все команды бота",
+                        ".new - сохранить ваше расписание (вместе с этой командой нужно передать .txt файл вашего расписания)",
+                        ".start - подписаться на рассылку уведомлений",
+                        ".stop - отписаться от рассылки уведомлений",
+                        ".chg - изменить что-то в рсаписании"
+                }));
 
-        private static void Start(GroupUpdate update)
+        private void StartCommand(MessageParams<T> message)
         {
-            Message message = ParseGroupUpdateIntoMessage(update);
-
-            if (timerByIdDict.ContainsKey(message.PeerId))
-                VkApiFacade.SendTextMessege(message.PeerId, "Вы уже подписаны на рассылку расписания");
+            if (timerByIdDict.ContainsKey(message.ChatId))
+                messengerApi.SendTextMessege(message.ChatId, "Вы уже подписаны на рассылку расписания");
             else
             {
-                Timer timer = new Timer((dataStore.NextLesson(message.PeerId) - DateTime.Now).TotalMilliseconds);
+                //Timer timer = new Timer((repositoryApi.NextLesson(message.ChatId) - DateTime.Now).TotalMilliseconds);
 
-                timer.Start();
+                //timer.Start();
 
-                timerByIdDict.Add(message.PeerId, timer);
+                //timerByIdDict.Add(message.PeerId, timer);
 
-                VkApiFacade.SendTextMessege(message.PeerId, "Вы подписаны на рассылку расписания");
+                //VkApiFacade.SendTextMessege(message.PeerId, "Теперь вы подписаны на рассылку расписания");
             }
         }
 
-        private static void Stop(GroupUpdate update)
+        private void StopCommand(MessageParams<T> message)
         {
-            Message message = ParseGroupUpdateIntoMessage(update);
+            //Message message = ParseGroupUpdateIntoMessage(update);
 
-            if (timerByIdDict.ContainsKey(message.PeerId))
-            {
-                timerByIdDict[message.PeerId].Stop();
+            //if (timerByIdDict.ContainsKey(message.PeerId))
+            //{
+            //    timerByIdDict[message.PeerId].Stop();
 
-                timerByIdDict.Remove(message.PeerId);
+            //    timerByIdDict.Remove(message.PeerId);
 
-                VkApiFacade.SendTextMessege(message.PeerId, "Вы отказались от рассылки расписания");
-            }
-            else
-                VkApiFacade.SendTextMessege(message.PeerId, "Вы не подписаны на рассылку расписания");
+            //    VkApiFacade.SendTextMessege(message.PeerId, "Вы отказались от рассылки расписания");
+            //}
+            //else
+            //    VkApiFacade.SendTextMessege(message.PeerId, "Вы не подписаны на рассылку расписания");
         }
 
-        private static void NewTimetable(GroupUpdate update)
+        private void NewTimetableCommand(MessageParams<T> message)
         {
-            Message message = ParseGroupUpdateIntoMessage(update);
-            // TODO: Можно ещё и pdf считывать
-            if (message.Attachments.Count == 1 && message.Attachments[0].Instance is Document doc && doc.Ext == "txt")
-            {
-                DownloadDocumentFromVk(doc);
+            //Message message = ParseGroupUpdateIntoMessage(update);
+            //// TODO: Можно ещё и pdf считывать
+            //if (message.Attachments.Count == 1 && message.Attachments[0].Instance is Document doc && doc.Ext == "txt")
+            //{
+            //    DownloadDocumentFromVk(doc);
 
-                dataStore.NewTimetable(File.ReadAllLines(doc.Title));
+            //    dataStore.NewTimetable(File.ReadAllLines(doc.Title));
 
-                File.Delete(doc.Title);
-            }
+            //    File.Delete(doc.Title);
+            //}
         }
 
-        private static void ChangeDayTimetable(GroupUpdate update)
+        private void ChangeDayTimetableCommand(MessageParams<T> message)
         {
             // TODO: Написать реализацию метода
         }
