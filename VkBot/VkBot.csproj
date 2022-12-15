@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\DataBase\DataBase.csproj" />
     <ProjectReference Include="..\TypesUsedByBot\TypesUsedByBot.csproj" />
     <ProjectReference Include="..\VkApiAdapter\VkApiAdapterForBot.csproj" />
   </ItemGroup>
