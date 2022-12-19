@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Timers;
+using System.Net;
+using System.Threading.Tasks;
 using TypesUsedByBot;
 
 namespace VkBot
@@ -9,35 +10,29 @@ namespace VkBot
     // T - тип данных для Id чата
     class BotCommands<T>
     {
-        private readonly IMessengerApi<T> messengerApi;
-        private readonly IRepositoryApi<T> repositoryApi;
-        private readonly Dictionary<T, Timer> timerWokdayByIdDict;
-        private readonly Dictionary<T, Timer> timerLessonByIdDict;
-        // TODO: переделать это в свойство
-        public readonly Dictionary<string, Action<MessageParams<T>>> CommandByMsgDict;
+        private readonly Bot<T> bot;
+        private readonly Dictionary<T, UserTimers<T>> timersByChatIdDict;
 
-        public BotCommands(IMessengerApi<T> messengerApi, IRepositoryApi<T> repositoryApi)
+        public Dictionary<string, Func<MessageParams<T>, Task>> CommandByMsgDict { get; }
+
+        public BotCommands(Bot<T> bot)
         {
-            this.messengerApi = messengerApi;
+            this.bot = bot;
 
-            this.repositoryApi = repositoryApi;
+            timersByChatIdDict = new Dictionary<T, UserTimers<T>>();
 
-            timerWokdayByIdDict = new Dictionary<T, Timer>();
-
-            timerLessonByIdDict = new Dictionary<T, Timer>();
-
-            CommandByMsgDict = new Dictionary<string, Action<MessageParams<T>>>()
+            CommandByMsgDict = new Dictionary<string, Func<MessageParams<T>, Task>>()
             {
-                [".help"] = HelpCommand,
-                [".start"] = StartCommand,
-                [".stop"] = StopCommand,
-                [".new"] = NewTimetableCommand,
-                [".chg"] = ChangeDayTimetableCommand,
+                [".help"] = HelpCommandAsync,
+                [".start"] = StartCommandAsync,
+                [".stop"] = StopCommandAsync,
+                [".new"] = NewTimetableCommandAsync,
+                [".chg"] = ChangeDayTimetableCommandAsync
             };
         }
 
         private void HelpCommand(MessageParams<T> message)
-            => messengerApi.SendTextMessage(
+            => bot.MessangerApi.SendTextMessage(
                 message.ChatId,
                 string.Join("\r\n", new string[] {
                         "Команды бота:",
@@ -48,63 +43,70 @@ namespace VkBot
                         ".chg - изменить что-то в рсаписании"
                 }));
 
+        private async Task HelpCommandAsync(MessageParams<T> message) => await Task.Run(() => HelpCommand(message));
+
         private void StartCommand(MessageParams<T> message)
         {
-            if (timerLessonByIdDict.ContainsKey(message.ChatId))
-                messengerApi.SendTextMessage(message.ChatId, "Вы уже подписаны на рассылку расписания");
+            if (timersByChatIdDict.ContainsKey(message.ChatId))
+                bot.MessangerApi.SendTextMessage(message.ChatId, "Вы уже подписаны на рассылку расписания");
             else
             {
-                (Workday workday, DateTime startTimeOfWorkday) = repositoryApi.GetStartTimeOfNextWokrday(message.ChatId);
+                UserTimers<T> userTimers = new UserTimers<T>(bot, message.ChatId);
 
-                Timer timer = new Timer((startTimeOfWorkday - DateTime.Now).TotalMilliseconds);
+                userTimers.StartTimerWorkday();
 
+                timersByChatIdDict[message.ChatId] = userTimers;
 
-
-                //(Lesson lesson, DateTime startTimeOfLesson) = repositoryApi.GetNextLesson(message.ChatId);
-
-                //Timer timer = new Timer((repositoryApi.NextLesson(message.ChatId) - DateTime.Now).TotalMilliseconds);
-
-                //timer.Start();
-
-                //timerByIdDict.Add(message.PeerId, timer);
-
-                //VkApiFacade.SendTextMessege(message.PeerId, "Теперь вы подписаны на рассылку расписания");
+                bot.MessangerApi.SendTextMessage(message.ChatId, "Теперь вы подписаны на рассылку расписания");
             }
         }
 
+        private async Task StartCommandAsync(MessageParams<T> message) => await Task.Run(() => StartCommand(message));
+
         private void StopCommand(MessageParams<T> message)
         {
-            //Message message = ParseGroupUpdateIntoMessage(update);
+            if (timersByChatIdDict.ContainsKey(message.ChatId))
+            {
+                timersByChatIdDict[message.ChatId].Stop();
 
-            //if (timerByIdDict.ContainsKey(message.PeerId))
-            //{
-            //    timerByIdDict[message.PeerId].Stop();
-
-            //    timerByIdDict.Remove(message.PeerId);
-
-            //    VkApiFacade.SendTextMessege(message.PeerId, "Вы отказались от рассылки расписания");
-            //}
-            //else
-            //    VkApiFacade.SendTextMessege(message.PeerId, "Вы не подписаны на рассылку расписания");
+                bot.MessangerApi.SendTextMessage(message.ChatId, "Вы отказались от рассылки расписания");
+            }
+            else
+                bot.MessangerApi.SendTextMessage(message.ChatId, "Вы не подписаны на рассылку расписания");
         }
+
+        private async Task StopCommandAsync(MessageParams<T> message) => await Task.Run(() => StopCommand(message));
 
         private void NewTimetableCommand(MessageParams<T> message)
         {
-            //Message message = ParseGroupUpdateIntoMessage(update);
-            //// TODO: Можно ещё и pdf считывать
-            //if (message.Attachments.Count == 1 && message.Attachments[0].Instance is Document doc && doc.Ext == "txt")
-            //{
-            //    DownloadDocumentFromVk(doc);
+            DocumentParams[] documents = message.ArrayOfLinksToAttachedFiles;
 
-            //    dataStore.NewTimetable(File.ReadAllLines(doc.Title));
+            if (documents.Length > 0 && documents[0].Ext == "txt")
+            {
+                DownloadDocument(documents[0]);
 
-            //    File.Delete(doc.Title);
-            //}
+                bot.RepositoryApi.NewTimetable(message.ChatId, ParserTxt.ParseIntoTimetable(File.ReadAllLines(documents[0].Title)));
+
+                File.Delete(documents[0].Title);
+
+                bot.MessangerApi.SendTextMessage(message.ChatId, "Добавлено новое рассписание");
+            }
+        }
+
+        private async Task NewTimetableCommandAsync(MessageParams<T> message) => await Task.Run(() => NewTimetableCommand(message));
+
+        private void DownloadDocument(DocumentParams document)
+        {
+            using WebClient client = new WebClient();
+
+            client.DownloadFile(document.Uri, document.Title);
         }
 
         private void ChangeDayTimetableCommand(MessageParams<T> message)
         {
             // TODO: Написать реализацию метода
         }
+
+        private async Task ChangeDayTimetableCommandAsync(MessageParams<T> message) => await Task.Run(() => ChangeDayTimetableCommand(message));
     }
 }

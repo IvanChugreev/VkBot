@@ -51,7 +51,7 @@ namespace VkBot
 
         private void TimerLesson_Elapsed(object sender, ElapsedEventArgs e)
         {
-            bot.MessengerApi.SendTextMessage(chatId, TextOfMessageAboutNextLesson);
+            bot.MessangerApi.SendTextMessage(chatId, TextOfMessageAboutNextLesson);
 
             StartTimerLesson();
         }
@@ -65,7 +65,7 @@ namespace VkBot
 
             if ((lesson.StartTime - DateTime.Now.TimeOfDay).Milliseconds < HeadStartTimerLesson + 100)
             {
-                bot.MessengerApi.SendTextMessage(chatId, lesson.ToString());
+                bot.MessangerApi.SendTextMessage(chatId, lesson.ToString());
 
                 System.Threading.Thread.Sleep((lesson.StartTime - DateTime.Now.TimeOfDay).Milliseconds);
 
@@ -90,7 +90,7 @@ namespace VkBot
 
         private void TimerWorkday_Elapsed(object sender, ElapsedEventArgs e)
         {
-            bot.MessengerApi.SendTextMessage(chatId, TextOfMessageAboutNextWorkday);
+            bot.MessangerApi.SendTextMessage(chatId, TextOfMessageAboutNextWorkday);
 
             StartTimerWorkday();
         }
@@ -101,7 +101,7 @@ namespace VkBot
 
             if ((startTimeOfWorkday - DateTime.Now).Milliseconds < HeadStartTimerWorkday + 100)
             {
-                bot.MessengerApi.SendTextMessage(chatId, workday.ToString());
+                bot.MessangerApi.SendTextMessage(chatId, workday.ToString());
 
                 StartTimerLesson();
 
@@ -117,6 +117,13 @@ namespace VkBot
 
                 StartTimerLesson();
             }    
+        }
+
+        public void Stop()
+        {
+            TimerLesson.Stop();
+
+            TimerWorkday.Stop();
         }
     }
 }

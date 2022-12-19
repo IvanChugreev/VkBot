@@ -1,33 +1,66 @@
-﻿using TypesUsedByBot;
+﻿using System;
+using System.Threading.Tasks;
+using TypesUsedByBot;
 
 namespace VkBot
 {
     // T - тип данных для Id чата получаемого из мессенджера
     class Bot<T>
     {
+        private object _lock;
+        private bool enabled;
         private readonly BotCommands<T> commands;
 
-        public IMessengerApi<T> MessengerApi { get; private set; }
+        public IMessengerApi<T> MessangerApi { get; private set; }
 
         public IRepositoryApi<T> RepositoryApi { get; private set; }
 
-        public Bot(IMessengerApi<T> messengerApi, IRepositoryApi<T> repositoryApi)
+        public Bot(IMessengerApi<T> messangerApi, IRepositoryApi<T> repositoryApi)
         {
-            //this.messengerApi = messengerApi;
+            _lock = new object();
 
-            //this.repositoryApi = repositoryApi;
+            enabled = false;
 
-            //commands = new BotCommands<T>(messengerApi, repositoryApi);
+            MessangerApi = messangerApi;
+
+            RepositoryApi = repositoryApi;
+
+            commands = new BotCommands<T>(this);
         }
 
-        //public void ReactToUpdate(MessageParams<T> message)
-        //{
-        //    // TODO: Дописать реакцию при возникновении ошибки
+        public async Task StartAsync()
+        {
+            enabled = true;
 
-        //    if (update.Instance is MessageNew newMessage &&
-        //        CommandByMsgDict.ContainsKey(newMessage.Message.Text.Split(new char[] { ' ', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)[0]))
-        //        CommandByMsgDict[newMessage.Message.Text](update);
-        //}
+            while(true)
+            {
+                lock(_lock)
+                {
+                    if (!enabled)
+                        break;
+                }
 
+                await ReactToNewMessagesAsync();
+            }
+        }
+
+        public void Stop()
+        {
+            lock (_lock)
+                enabled = false;
+        }
+
+        private async Task ReactToNewMessagesAsync()
+        {
+            foreach (MessageParams<T> message in MessangerApi.GetNewMessages())
+            {
+                string firstWord = message.Text.Split(new char[] { ' ', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)[0];
+
+                if (commands.CommandByMsgDict.ContainsKey(firstWord))
+                    try { await commands.CommandByMsgDict[firstWord](message); }
+                    catch (ArgumentException e) { MessangerApi.SendTextMessage(message.ChatId, e.Message); }
+                    catch { MessangerApi.SendTextMessage(message.ChatId, "Какие-то неполадки, но мы уже чиним"); }
+            }
+        }
     }
 }

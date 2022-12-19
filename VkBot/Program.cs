@@ -11,22 +11,24 @@ namespace VkBot
     {
         async static Task Main(string[] args)
         {
-
             // Чтобы подключиться к VkApi в файле setting.txt должно быть: в первой строке токен, во второй строке id группы
-            //string[] setting = File.ReadAllText("setting.txt").Split(new char[] { '\n', '\r', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            string[] setting = File.ReadAllText("setting.txt").Split(new char[] { '\n', '\r', ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
             // Инициализация API мессенджера
-            //IMessengerApi<long> vkApi = new VkApiAdapter(setting[0], ulong.Parse(setting[1]));
+            IMessengerApi<long> vkApi = new VkApiAdapter(setting[0], ulong.Parse(setting[1]));
 
             // Инициализация системы хранения
+            IRepositoryApi<long> repositoryApi = new Protocol();
 
-            //BotCommands<long> commands = new BotCommands<long>(vkApi, )
+            Bot<long> bot = new Bot<long>(vkApi, repositoryApi);
 
-            Protocol pr = new Protocol();
-            pr.GetStartTimeOfNextWokrday("12345678");
-            //var t = DayOfWeek.Saturday;
-           // t = t + 1;
-            //Console.WriteLine(t);
+            Task task = bot.StartAsync();
+
+            Console.ReadKey();
+
+            bot.Stop();
+
+            await task;
         }
     }
 }
