@@ -4,9 +4,9 @@ using TypesUsedByBot;
 
 namespace DataBase
 {
-    public class Protocol : IRepositoryApi<string>
+    public class Protocol : IRepositoryApi<long>
     {
-        public bool AddLesson(string chatId, bool numerator, DayOfWeek dayOfWeek, Lesson lesson)
+        public bool AddLesson(long chatId, bool numerator, DayOfWeek dayOfWeek, Lesson lesson)
         {
             using (DBConnection dbc = new DBConnection())
             {
@@ -70,11 +70,10 @@ namespace DataBase
             return true;
         }
 
-        public bool DeleteLesson(string chatId, bool numerator, DayOfWeek dayOfWeek, TimeSpan startTimeOfLesson)
+        public bool DeleteLesson(long chatId, bool numerator, DayOfWeek dayOfWeek, TimeSpan startTimeOfLesson)
         {
             using (DBConnection dbc = new DBConnection())
             {
-                Schedules sch = new Schedules();
                 int id = FindIdGroup(dbc, chatId);
                 string parity;
                 if (numerator == true)
@@ -90,14 +89,42 @@ namespace DataBase
             return true;
         }
 
-        public bool NewTimetable(string chatId, Timetable timetable)
+        public bool NewTimetable(long chatId, Timetable timetable)
         {
-            FillingInTheWeek(chatId, timetable.Numerator, timetable.GroupName, true);
-            FillingInTheWeek(chatId, timetable.Denominator, timetable.GroupName, false);
+            using (DBConnection dbc = new DBConnection())
+            {
+                int id = FindIdGroup(dbc, chatId);
+                if (id != -1)
+                {
+                    DeleteTimetable(chatId);
+                }
+                FillingInTheWeek(chatId, timetable.Numerator, timetable.GroupName, true);
+                FillingInTheWeek(chatId, timetable.Denominator, timetable.GroupName, false);
+            }                       
             return true;
         }
 
-        public (Lesson, DateTime) NextLesson(string chatId)
+        public void DeleteTimetable(long chatId)
+        {
+            using (DBConnection dbc = new DBConnection())
+            {
+                int id = FindIdGroup(dbc,chatId);
+
+
+                var deleteGroups = dbc.Groups.Where(item => item.id_Chat == chatId).ToArray();                
+                var deleteTimeTable = dbc.Schedules.Where(item => item.IdGroup == id).ToList();
+
+                foreach(var item in deleteTimeTable)
+                {
+                    dbc.Remove(item);
+                }
+                dbc.SaveChanges();
+                dbc.RemoveRange(deleteGroups);
+                dbc.SaveChanges();
+            }   
+        }
+
+        public Lesson GetNextLesson(long chatId)
         {
             var date = DateTime.Now;                                                                            //сегодняшняя дата
             var dayofweek = date.DayOfWeek;                                                                     // день недели текущий
@@ -128,22 +155,22 @@ namespace DataBase
                 }
                 ListSchedules = ListSchedules.OrderBy(item=> item.TimeLesson).ToList();
                 var a = CheckingTheTimeOfTheNextLesson(ListSchedules, date);
-                //if (a != null)  return FillinInTheLesson(a).; 
+                if (a != null)  return FillinInTheLesson(a); 
             }
-            //return null;
-            throw new NotImplementedException();
+            return null;
+            
         }
 
 
 
-        public (Workday, DateTime) GetStartTimeOfNextWokrday(string chatId)
+        public (Workday, DateTime) GetStartTimeOfNextWokrday(long chatId)
         {
-            int CountDay = 0;
+            int CountDay = 0;                                                                                           //счётчик дней
             var date = DateTime.Now;                                                                                    //сегодняшняя дата
             DayOfWeek dayofweek = date.DayOfWeek+1;                                                                     // день недели текущий
                                                                     
             var currentCulture = CultureInfo.CurrentCulture;
-            var weekNumber = currentCulture.Calendar.GetWeekOfYear
+            var weekNumber = currentCulture.Calendar.GetWeekOfYear                                                      //номер недели
                 (
                     new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day),
                     currentCulture.DateTimeFormat.CalendarWeekRule,
@@ -183,14 +210,14 @@ namespace DataBase
                 
                 return (wrka, date);
             }
-            throw new NotImplementedException();
+            
         }
 
 
 
 
 
-        public List<Schedules> SearchForTheDayOfTheWeekWithLessons(ref DayOfWeek dayofweek, string parity, int idGroup,ref int CountDay)
+        private List<Schedules> SearchForTheDayOfTheWeekWithLessons(ref DayOfWeek dayofweek, string parity, int idGroup,ref int CountDay)
         {
             List<Schedules> ListSchedules;
 
@@ -207,11 +234,9 @@ namespace DataBase
                 }
             }
             dayofweek = DayOfWeek.Monday;
-
-            return null;
-            //throw new NotImplementedException();
+            return null; 
         }
-        public Lesson FillinInTheLesson(Schedules sch)
+        private Lesson FillinInTheLesson(Schedules sch)
         {
             using (DBConnection dbc = new DBConnection())
             {
@@ -225,7 +250,7 @@ namespace DataBase
         }
 
 
-        public Schedules CheckingTheTimeOfTheNextLesson(List<Schedules> list, DateTime date)                                           //определяем время следующей пары
+        private Schedules CheckingTheTimeOfTheNextLesson(List<Schedules> list, DateTime date)                                           //определяем время следующей пары
         {
             TimeSpan timeNow = TimeSpan.Parse(date.ToString("HH:mm:ss"));
 
@@ -247,7 +272,7 @@ namespace DataBase
         }
 
 
-        public void FillingInTheWeek(string chatId, List<Workday> week, string groupName, bool parity)                                 //Заполнение недели
+        private void FillingInTheWeek(long chatId, List<Workday> week, string groupName, bool parity)                                 //Заполнение недели
         {
             using (DBConnection dbc = new DBConnection())
             {
@@ -331,11 +356,6 @@ namespace DataBase
         }
 
 
-
-
-
-
-
         private int FindIdDiscipline(DBConnection dbc, Lesson lesson)
         {
             foreach (var item in dbc.Disciplines)
@@ -365,7 +385,7 @@ namespace DataBase
             }
             return -1;
         }
-        private int FindIdGroup(DBConnection dbc, string chatId)
+        private int FindIdGroup(DBConnection dbc, long chatId)
         {
             foreach (var item in dbc.Groups)
             {

@@ -23,7 +23,8 @@ namespace VkBot
             //BotCommands<long> commands = new BotCommands<long>(vkApi, )
 
             Protocol pr = new Protocol();
-            pr.GetStartTimeOfNextWokrday("12345678");
+            //pr.GetStartTimeOfNextWokrday(12345678);
+            pr.DeleteTimetable(87654321);
             //var t = DayOfWeek.Saturday;
            // t = t + 1;
             //Console.WriteLine(t);
