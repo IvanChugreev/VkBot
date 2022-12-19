@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Threading.Tasks;
 using TypesUsedByBot;
+using System.Text;
 
 namespace VkBot
 {
@@ -84,15 +85,26 @@ namespace VkBot
             if (documents.Length > 0 && documents[0].Ext == "txt")
             {
                 DownloadDocument(documents[0]);
+                //var file1 = File.ReadAllBytes(documents[0].Title);
+                //var text = Encoding.ASCII.GetString(file1); // Переводим байты ASCII в текст
+                //var utf16leBytes = Encoding.Unicode.GetBytes(text); // Переводим текст в байты UTF-16LE
+                //bot.RepositoryApi.NewTimetable(message.ChatId, ParserTxt.ParseIntoTimetable(File.ReadAllLines(documents[0].Title)));
+                
 
-                bot.RepositoryApi.NewTimetable(message.ChatId, ParserTxt.ParseIntoTimetable(File.ReadAllLines(documents[0].Title)));
-
+                bot.RepositoryApi.NewTimetable(message.ChatId, ParserTxt.ParseIntoTimetable(EncodingFile(documents[0].Title)));
                 File.Delete(documents[0].Title);
 
                 bot.MessangerApi.SendTextMessage(message.ChatId, "Добавлено новое рассписание");
             }
         }
+        private static string[] EncodingFile(string fileName)
+        {
+            byte[] asciiBytes = File.ReadAllBytes(fileName);
 
+            string text = Encoding.GetEncoding(1251).GetString(asciiBytes);
+
+            return text.Split(new char[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+        }
         private async Task NewTimetableCommandAsync(MessageParams<T> message) => await Task.Run(() => NewTimetableCommand(message));
 
         private void DownloadDocument(DocumentParams document)

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using TypesUsedByBot;
+using System.Text;
 
 namespace VkBot
 {
@@ -11,7 +12,9 @@ namespace VkBot
             List<Workday> numerator = null, denominator = null;
 
             int startIndex = 2;
-
+         
+            //Console.WriteLine((int)strings[1][1]);
+            //Console.WriteLine((int)'Ч');
             if (strings[1] == "Числитель")
                 numerator = ParseIntoListOfWorkdays(strings, ref startIndex);
 
