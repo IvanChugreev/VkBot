@@ -12,17 +12,6 @@
             Lessons = lessons;
         }
 
-        public Workday(DayOfWeek nameDay, string[] strings, int startIndex)
-        {
-            Name = nameDay;
-
-            Lessons = new List<Lesson>();
-
-            for (; startIndex < strings.Length; startIndex++)
-                if (char.IsDigit(strings[startIndex][0]))
-                    Lessons.Add(new Lesson(strings[startIndex]));
-                else
-                    break;
-        }
+        public override string ToString() => $"{Name}\r\n" + string.Join("\r\n", Lessons);
     }
 }

@@ -40,7 +40,7 @@ namespace VkApiAdapterForBot
             GroupId = groupId;
         }
 
-        public void SendTextMessege(long recipientId, string text) 
+        public void SendTextMessage(long recipientId, string text) 
             => Api.Messages.Send(new MessagesSendParams 
             { 
                 RandomId = randomId.Next(), 
@@ -48,7 +48,7 @@ namespace VkApiAdapterForBot
                 PeerId = recipientId 
             });
 
-        public List<MessageParams<long>> GetNewMesseges()
+        public List<MessageParams<long>> GetNewMessages()
         {
             List<MessageParams<long>> messages = new List<MessageParams<long>>();
 

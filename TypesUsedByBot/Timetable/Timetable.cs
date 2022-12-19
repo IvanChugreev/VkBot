@@ -8,10 +8,15 @@
 
         public List<Workday> Denominator { get; set; }                  //знаменатель
 
-        public Timetable(List<Workday> numerator, List<Workday> denominator)
+        public Timetable(string groupName, List<Workday> numerator, List<Workday> denominator)
         {
+            GroupName = groupName;
             Numerator = numerator;
             Denominator = denominator;
         }
+
+        public override string ToString() => $"{GroupName}\r\n" + 
+            "Числитель\r\n" + string.Join("\r\n", Numerator) + 
+            "\r\nЗнаменатель\r\n" + string.Join("\r\n", Denominator);
     }
 }

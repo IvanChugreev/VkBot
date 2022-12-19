@@ -11,7 +11,8 @@ namespace VkBot
     {
         private readonly IMessengerApi<T> messengerApi;
         private readonly IRepositoryApi<T> repositoryApi;
-        private readonly Dictionary<T, Timer> timerByIdDict;
+        private readonly Dictionary<T, Timer> timerWokdayByIdDict;
+        private readonly Dictionary<T, Timer> timerLessonByIdDict;
         // TODO: переделать это в свойство
         public readonly Dictionary<string, Action<MessageParams<T>>> CommandByMsgDict;
 
@@ -21,7 +22,9 @@ namespace VkBot
 
             this.repositoryApi = repositoryApi;
 
-            timerByIdDict = new Dictionary<T, Timer>();
+            timerWokdayByIdDict = new Dictionary<T, Timer>();
+
+            timerLessonByIdDict = new Dictionary<T, Timer>();
 
             CommandByMsgDict = new Dictionary<string, Action<MessageParams<T>>>()
             {
@@ -33,17 +36,8 @@ namespace VkBot
             };
         }
 
-        //public void ReactToUpdate(MessageParams<T> message)
-        //{
-        //    // TODO: Дописать реакцию при возникновении ошибки
-
-        //    if (update.Instance is MessageNew newMessage &&
-        //        CommandByMsgDict.ContainsKey(newMessage.Message.Text.Split(new char[] { ' ', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)[0]))
-        //        CommandByMsgDict[newMessage.Message.Text](update);
-        //}
-
         private void HelpCommand(MessageParams<T> message)
-            => messengerApi.SendTextMessege(
+            => messengerApi.SendTextMessage(
                 message.ChatId,
                 string.Join("\r\n", new string[] {
                         "Команды бота:",
@@ -56,10 +50,18 @@ namespace VkBot
 
         private void StartCommand(MessageParams<T> message)
         {
-            if (timerByIdDict.ContainsKey(message.ChatId))
-                messengerApi.SendTextMessege(message.ChatId, "Вы уже подписаны на рассылку расписания");
+            if (timerLessonByIdDict.ContainsKey(message.ChatId))
+                messengerApi.SendTextMessage(message.ChatId, "Вы уже подписаны на рассылку расписания");
             else
             {
+                (Workday workday, DateTime startTimeOfWorkday) = repositoryApi.NextWokrday(message.ChatId);
+
+                Timer timer = new Timer((startTimeOfWorkday - DateTime.Now).TotalMilliseconds);
+
+
+
+                (Lesson lesson, DateTime startTimeOfLesson) = repositoryApi.NextLesson(message.ChatId);
+
                 //Timer timer = new Timer((repositoryApi.NextLesson(message.ChatId) - DateTime.Now).TotalMilliseconds);
 
                 //timer.Start();

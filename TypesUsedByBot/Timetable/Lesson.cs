@@ -18,17 +18,6 @@
             StartTime = startTime;
         }
 
-        public Lesson(string info)
-        {
-            string[] parameters = info.Split(',');
-
-            StartTime = TimeSpan.Parse(parameters[0]);
-
-            Name = parameters[1];
-
-            CabinetNumber = parameters[2];
-
-            TeacherName = parameters[3];
-        }
+        public override string ToString() => $"{StartTime:hh\\:mm} -- {Name} -- {CabinetNumber} -- {TeacherName}";
     }
 }
