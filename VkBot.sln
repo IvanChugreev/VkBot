@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TypesUsedByBot", "TypesUsed
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VkApiAdapterForBot", "VkApiAdapter\VkApiAdapterForBot.csproj", "{5D3D3484-FB7D-4B87-8E79-0D951A47C7EA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataBase", "DataBase\DataBase.csproj", "{56D3F772-F9B8-4E55-94C3-FA4506F9F7DA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataBase", "DataBase\DataBase.csproj", "{50A20525-279D-4E70-822F-A80EB04554EA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -29,10 +29,10 @@ Global
 		{5D3D3484-FB7D-4B87-8E79-0D951A47C7EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5D3D3484-FB7D-4B87-8E79-0D951A47C7EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5D3D3484-FB7D-4B87-8E79-0D951A47C7EA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{56D3F772-F9B8-4E55-94C3-FA4506F9F7DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{56D3F772-F9B8-4E55-94C3-FA4506F9F7DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{56D3F772-F9B8-4E55-94C3-FA4506F9F7DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{56D3F772-F9B8-4E55-94C3-FA4506F9F7DA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{50A20525-279D-4E70-822F-A80EB04554EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{50A20525-279D-4E70-822F-A80EB04554EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{50A20525-279D-4E70-822F-A80EB04554EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{50A20525-279D-4E70-822F-A80EB04554EA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
