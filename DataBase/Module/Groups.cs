@@ -13,7 +13,7 @@ namespace DataBase
         [Key]
         public int? id { get; set; }
         public string Name { get; set; }
-        public string id_Chat { get; set; }
+        public long id_Chat { get; set; }
     }
     public partial class DBConnection : DbContext
     {
