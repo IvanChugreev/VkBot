@@ -11,9 +11,9 @@
     // T - тип данных для Id чата 
     public interface IRepositoryApi<T>
     {
-        (Lesson, DateTime) NextLesson(T chatId);
+        Lesson GetNextLesson(T chatId);
 
-        (Workday, DateTime) NextWokrday(T chatId);
+        (Workday, DateTime) GetStartTimeOfNextWokrday(T chatId);
 
         bool NewTimetable(T chatId, Timetable timetable);
 

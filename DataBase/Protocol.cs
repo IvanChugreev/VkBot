@@ -136,7 +136,7 @@ namespace DataBase
 
 
 
-        public (Workday, DateTime) NextWokrday(string chatId)
+        public (Workday, DateTime) GetStartTimeOfNextWokrday(string chatId)
         {
             int CountDay = 0;
             var date = DateTime.Now;                                                                                    //сегодняшняя дата

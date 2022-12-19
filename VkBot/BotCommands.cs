@@ -54,13 +54,13 @@ namespace VkBot
                 messengerApi.SendTextMessage(message.ChatId, "Вы уже подписаны на рассылку расписания");
             else
             {
-                (Workday workday, DateTime startTimeOfWorkday) = repositoryApi.NextWokrday(message.ChatId);
+                (Workday workday, DateTime startTimeOfWorkday) = repositoryApi.GetStartTimeOfNextWokrday(message.ChatId);
 
                 Timer timer = new Timer((startTimeOfWorkday - DateTime.Now).TotalMilliseconds);
 
 
 
-                (Lesson lesson, DateTime startTimeOfLesson) = repositoryApi.NextLesson(message.ChatId);
+                //(Lesson lesson, DateTime startTimeOfLesson) = repositoryApi.GetNextLesson(message.ChatId);
 
                 //Timer timer = new Timer((repositoryApi.NextLesson(message.ChatId) - DateTime.Now).TotalMilliseconds);
 

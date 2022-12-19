@@ -43,30 +43,68 @@ namespace VkBot
             TimerWorkday.Elapsed += TimerWorkday_Elapsed;
         }
 
+        public void StartTimerLesson()
+        {
+            if (UpdateTimerLesson())
+                TimerLesson.Start();
+        }
+
         private void TimerLesson_Elapsed(object sender, ElapsedEventArgs e)
         {
             bot.MessengerApi.SendTextMessage(chatId, TextOfMessageAboutNextLesson);
 
-            bot.RepositoryApi.NextLesson(chatId);
+            StartTimerLesson();
+        }
 
-            // Обновить текст сообщения и проверить, закончились ли пары, запустить заново таймер + проверка, что мы успеваем отправить сообщение
+        private bool UpdateTimerLesson()
+        {
+            Lesson lesson = bot.RepositoryApi.GetNextLesson(chatId);
+
+            if (lesson != null)
+                return false;
+
+            if ((lesson.StartTime - DateTime.Now.TimeOfDay).Milliseconds < HeadStartTimerLesson + 100)
+            {
+                bot.MessengerApi.SendTextMessage(chatId, lesson.ToString());
+
+                System.Threading.Thread.Sleep((lesson.StartTime - DateTime.Now.TimeOfDay).Milliseconds);
+
+                UpdateTimerLesson();
+            }
+            else
+            {
+                TextOfMessageAboutNextLesson = lesson.ToString();
+
+                TimerLesson.Interval = (lesson.StartTime - DateTime.Now.TimeOfDay).Milliseconds - HeadStartTimerLesson;
+            }
+
+            return true;
+        }
+
+        public void StartTimerWorkday()
+        {
+            UpdateTimerWokrday();
+
+            TimerWorkday.Start();
         }
 
         private void TimerWorkday_Elapsed(object sender, ElapsedEventArgs e)
         {
             bot.MessengerApi.SendTextMessage(chatId, TextOfMessageAboutNextWorkday);
 
-            UpdateTimerWokrday();
-
-            TimerWorkday.Start();
+            StartTimerWorkday();
         }
 
         private void UpdateTimerWokrday()
         {
-            (Workday workday, DateTime startTimeOfWorkday) = bot.RepositoryApi.NextWokrday(chatId);
+            (Workday workday, DateTime startTimeOfWorkday) = bot.RepositoryApi.GetStartTimeOfNextWokrday(chatId);
 
-            if ((startTimeOfWorkday - DateTime.Now).Milliseconds < HeadStartTimerWorkday + 1000)
+            if ((startTimeOfWorkday - DateTime.Now).Milliseconds < HeadStartTimerWorkday + 100)
             {
+                bot.MessengerApi.SendTextMessage(chatId, workday.ToString());
+
+                StartTimerLesson();
+
                 System.Threading.Thread.Sleep((startTimeOfWorkday - DateTime.Now).Milliseconds);
 
                 UpdateTimerWokrday();
@@ -76,6 +114,8 @@ namespace VkBot
                 TextOfMessageAboutNextWorkday = workday.ToString();
 
                 TimerWorkday.Interval = (startTimeOfWorkday - DateTime.Now).Milliseconds - HeadStartTimerWorkday;
+
+                StartTimerLesson();
             }    
         }
     }
