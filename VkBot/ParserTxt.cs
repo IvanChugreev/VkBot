@@ -13,8 +13,6 @@ namespace VkBot
 
             int startIndex = 2;
          
-            //Console.WriteLine((int)strings[1][1]);
-            //Console.WriteLine((int)'Ч');
             if (strings[1] == "Числитель")
                 numerator = ParseIntoListOfWorkdays(strings, ref startIndex);
 
@@ -84,7 +82,7 @@ namespace VkBot
         {
             string[] parameters = info.Split('-');
 
-            return new Lesson(parameters[1], parameters[3], parameters[2], TimeSpan.Parse(parameters[0]));
+            return new Lesson(parameters[1], parameters[2], parameters[3], TimeSpan.Parse(parameters[0]));
         }
     }
 }

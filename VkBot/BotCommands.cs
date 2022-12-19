@@ -28,7 +28,8 @@ namespace VkBot
                 [".start"] = StartCommandAsync,
                 [".stop"] = StopCommandAsync,
                 [".new"] = NewTimetableCommandAsync,
-                [".chg"] = ChangeDayTimetableCommandAsync
+                [".chg"] = ChangeDayTimetableCommandAsync,
+                [".example"] = ExampleCommandAsync
             };
         }
 
@@ -38,13 +39,33 @@ namespace VkBot
                 string.Join("\r\n", new string[] {
                         "Команды бота:",
                         ".help - рассказать про все команды бота",
-                        ".new - сохранить ваше расписание (вместе с этой командой нужно передать .txt файл вашего расписания)",
+                        ".new - сохранить ваше расписание (вместе с этой командой нужно передать .txt файл вашего расписания, как в .example)",
                         ".start - подписаться на рассылку уведомлений",
                         ".stop - отписаться от рассылки уведомлений",
-                        ".chg - изменить что-то в рсаписании"
+                        ".chg - изменить что-то в рсаписании",
+                        ".example - пример расписания"
                 }));
 
         private async Task HelpCommandAsync(MessageParams<T> message) => await Task.Run(() => HelpCommand(message));
+
+        private void ExampleCommand(MessageParams<T> message)
+            => bot.MessangerApi.SendTextMessage(
+                message.ChatId,
+                string.Join("\r\n", new string[] {
+                        "ИБ-3",
+                        "Числитель",
+                        "Пн",
+                        "9:00-Матстат-Гринев-414",
+                        "Ср",
+                        "13:00-Схематехника-Гвоздарев-Физфак 14каб",
+                        "14:30-Схематехника-Гвоздарев-Физфак 14каб",
+                        "Знаменатель",
+                        "Сб",
+                        "9:00-ОС-Савинов-412",
+                        "10:45-ОС-Савинов-412"
+                }));
+
+        private async Task ExampleCommandAsync(MessageParams<T> message) => await Task.Run(() => ExampleCommand(message));
 
         private void StartCommand(MessageParams<T> message)
         {
@@ -85,18 +106,15 @@ namespace VkBot
             if (documents.Length > 0 && documents[0].Ext == "txt")
             {
                 DownloadDocument(documents[0]);
-                //var file1 = File.ReadAllBytes(documents[0].Title);
-                //var text = Encoding.ASCII.GetString(file1); // Переводим байты ASCII в текст
-                //var utf16leBytes = Encoding.Unicode.GetBytes(text); // Переводим текст в байты UTF-16LE
-                //bot.RepositoryApi.NewTimetable(message.ChatId, ParserTxt.ParseIntoTimetable(File.ReadAllLines(documents[0].Title)));
-                
 
                 bot.RepositoryApi.NewTimetable(message.ChatId, ParserTxt.ParseIntoTimetable(EncodingFile(documents[0].Title)));
+
                 File.Delete(documents[0].Title);
 
                 bot.MessangerApi.SendTextMessage(message.ChatId, "Добавлено новое рассписание");
             }
         }
+
         private static string[] EncodingFile(string fileName)
         {
             byte[] asciiBytes = File.ReadAllBytes(fileName);
@@ -105,6 +123,7 @@ namespace VkBot
 
             return text.Split(new char[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
         }
+
         private async Task NewTimetableCommandAsync(MessageParams<T> message) => await Task.Run(() => NewTimetableCommand(message));
 
         private void DownloadDocument(DocumentParams document)
