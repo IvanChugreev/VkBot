@@ -11,11 +11,21 @@ namespace VkBot
     {
         async static Task Main(string[] args)
         {
-            // Чтобы подключиться к VkApi в файле setting.txt должно быть: в первой строке токен, во второй строке id группы
-            string[] setting = File.ReadAllText("setting.txt").Split(new char[] { '\n', '\r', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            IMessengerApi<long> vkApi = null;
 
-            // Инициализация API мессенджера
-            IMessengerApi<long> vkApi = new VkApiAdapter(setting[0], ulong.Parse(setting[1]));
+            try
+            {
+                // Чтобы подключиться к VkApi в файле setting.txt должно быть: в первой строке токен, во второй строке id группы
+                string[] setting = File.ReadAllLines("setting.txt");
+
+                // Инициализация API мессенджера
+                vkApi = new VkApiAdapter(setting[0], ulong.Parse(setting[1]));
+            }
+            catch (FileNotFoundException e) { Console.WriteLine(e.Message); }
+            catch { Console.WriteLine("Некорректные данные в файле setting.txt (в файле setting.txt должно быть: в первой строке токен, во второй строке id группы)"); }
+
+            if (vkApi == null)
+                return;
 
             // Инициализация системы хранения
             IRepositoryApi<long> repositoryApi = new Protocol();

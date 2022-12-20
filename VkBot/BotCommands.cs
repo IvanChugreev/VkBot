@@ -5,6 +5,7 @@ using System.Net;
 using System.Threading.Tasks;
 using TypesUsedByBot;
 using System.Text;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
 
 namespace VkBot
 {
@@ -28,7 +29,8 @@ namespace VkBot
                 [".start"] = StartCommandAsync,
                 [".stop"] = StopCommandAsync,
                 [".new"] = NewTimetableCommandAsync,
-                [".chg"] = ChangeDayTimetableCommandAsync,
+                [".add"] = AddLessonCommandAsync,
+                [".del"] = DeleteLessonCommandAsync,
                 [".example"] = ExampleCommandAsync
             };
         }
@@ -42,7 +44,7 @@ namespace VkBot
                         ".new - сохранить ваше расписание (вместе с этой командой нужно передать .txt файл вашего расписания, как в .example)",
                         ".start - подписаться на рассылку уведомлений",
                         ".stop - отписаться от рассылки уведомлений",
-                        ".chg - изменить что-то в рсаписании",
+                        ".add - добавить занятие в расписание",
                         ".example - пример расписания"
                 }));
 
@@ -133,11 +135,34 @@ namespace VkBot
             client.DownloadFile(document.Uri, document.Title);
         }
 
-        private void ChangeDayTimetableCommand(MessageParams<T> message)
+        private void AddLessonCommand(MessageParams<T> message)
         {
-            // TODO: Написать реализацию метода
+            string[] words = message.Text.Split(' ');
+
+            bool result = bot.RepositoryApi.AddLesson(
+                message.ChatId,
+                words[1] == "числитель", 
+                ParserTxt.ParseIntoDayOfWeek(words[2]) ?? throw new ArgumentException("Некорректные данные команды"), 
+                ParserTxt.ParseIntoLesson(words[3]));
+
+            bot.MessangerApi.SendTextMessage(message.ChatId, result ? "Занятие добавлено" : "Данное время занято (или вы ещё не создали расписание)");
         }
 
-        private async Task ChangeDayTimetableCommandAsync(MessageParams<T> message) => await Task.Run(() => ChangeDayTimetableCommand(message));
+        private async Task AddLessonCommandAsync(MessageParams<T> message) => await Task.Run(() => AddLessonCommand(message));
+
+        private void DeleteLessonCommand(MessageParams<T> message)
+        {
+            string[] words = message.Text.Split(' ');
+
+            bool result = bot.RepositoryApi.DeleteLesson(
+                message.ChatId,
+                words[1] == "числитель",
+                ParserTxt.ParseIntoDayOfWeek(words[2]) ?? throw new ArgumentException("Некорректные данные команды"),
+                TimeSpan.Parse(words[3]));
+
+            bot.MessangerApi.SendTextMessage(message.ChatId, result ? "Занятие удалено" : "Занятие не найдено");
+        }
+
+        private async Task DeleteLessonCommandAsync(MessageParams<T> message) => await Task.Run(() => DeleteLessonCommand(message));
     }
 }
