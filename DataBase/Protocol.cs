@@ -18,10 +18,13 @@ namespace DataBase
                     sch.IdGroup = id;
                 }
                 else return false;
+                var time = lesson.StartTime;
+                if (dbc.Schedules.FirstOrDefault(item => item.TimeLesson == time && item.Day == dayOfWeek.ToString()) != null)              //проверка есть ли пара уже в этот день в это время
+                    return false;
 
-                var a = dbc.Disciplines.FirstOrDefault(item => item.Name == lesson.Name);
-                if (a != null)
-                    sch.IdDiscipline = a.id.Value;
+                var disciplineFirst = dbc.Disciplines.FirstOrDefault(item => item.Name == lesson.Name);
+                if (disciplineFirst != null)
+                    sch.IdDiscipline = disciplineFirst.id.Value;
                 else
                 {
                     Disciplines dis = new Disciplines();
@@ -32,9 +35,9 @@ namespace DataBase
                     sch.IdDiscipline = DisId;
                 }
 
-                var b = dbc.Audiences.FirstOrDefault(item => item.Number == lesson.CabinetNumber);
-                if (b != null)
-                    sch.IdAudience = b.id.Value;
+                var audienceFirst = dbc.Audiences.FirstOrDefault(item => item.Number == lesson.CabinetNumber);
+                if (audienceFirst != null)
+                    sch.IdAudience = audienceFirst.id.Value;
                 else
                 {
                     Audiences au = new Audiences();
@@ -45,9 +48,9 @@ namespace DataBase
                     sch.IdAudience = AuId;
                 }
 
-                var c = dbc.Teachers.FirstOrDefault(item => item.Name == lesson.TeacherName);
-                if (c != null)
-                    sch.IdTeacher = c.id.Value;
+                var teacherFirst = dbc.Teachers.FirstOrDefault(item => item.Name == lesson.TeacherName);
+                if (teacherFirst != null)
+                    sch.IdTeacher = teacherFirst.id.Value;
                 else
                 {
                     Teachers tea = new Teachers();
@@ -82,7 +85,8 @@ namespace DataBase
                 var deleteLesson = dbc.Schedules.Where(item => item.Parity == parity)
                                                 .Where(item => item.Day == dayOfWeek.ToString())
                                                 .Where(item => item.TimeLesson == startTimeOfLesson)
-                                                .Where(item => item.IdGroup == id);
+                                                .Where(item => item.IdGroup == id).ToList();
+                if (deleteLesson.Count == 0) return false;                                              //проверка есть ли такая пара
                 dbc.RemoveRange(deleteLesson);
                 dbc.SaveChanges();
             }
@@ -177,16 +181,22 @@ namespace DataBase
                     currentCulture.DateTimeFormat.FirstDayOfWeek
                 );
 
+            string parity;
+            if (weekNumber % 2 != 0)
+                parity = "Числитель";
+            else parity = "Знаменатель";
+
 
             using (DBConnection dbc = new DBConnection())
             {
                 int id = FindIdGroup(dbc, chatId);
-                string parity;
+                if (id == -1) return (null, new DateTime());
 
-                if (weekNumber % 2 != 0)
-                    parity = "Числитель";
-                else parity = "Знаменатель";
 
+
+                if (dayofweek == DayOfWeek.Monday && parity == "Числитель")
+                    parity = "Знаменатель";
+                else parity = "Числитель";
 
                 List<Schedules> ListSchedules = SearchForTheDayOfTheWeekWithLessons(ref dayofweek, parity, id, ref CountDay);
                 if (ListSchedules == null)
@@ -206,8 +216,11 @@ namespace DataBase
                 }
                 ListLesson = ListLesson.OrderBy(item => item.StartTime).ToList();                                                //сортировка
                 Workday wrka = new Workday(dayofweek, ListLesson);
-                date = DateTime.Now.Add(TimeSpan.Parse(CountDay.ToString()));                                                  //сколько времени прошло
-                
+                date = DateTime.Today.Add(TimeSpan.Parse(CountDay.ToString()));                                                  //сколько времени прошло
+                TimeSpan time = wrka.Lessons[0].StartTime;
+                date = date + time;
+                //date.Hour = time.Hours;
+
                 return (wrka, date);
             }
             
@@ -226,10 +239,16 @@ namespace DataBase
                 for (var i = dayofweek; i <= DayOfWeek.Saturday; i++)
                 {
                     ListSchedules = dbc.Schedules.Where(item => item.Parity == parity)
-                                                 .Where(item => item.Day == i.ToString()).ToList();
+                                                 .Where(item => item.Day == i.ToString())
+                                                 .Where(item => item.IdGroup == idGroup).ToList();
+                                                 
                     CountDay++;
                     if (ListSchedules.Count != 0)
+                    {
+                        dayofweek = i;
                         return ListSchedules;
+                    }
+                        
                     
                 }
             }
@@ -278,9 +297,10 @@ namespace DataBase
             {
                 foreach (var workday in week)
                 {
-                    Schedules sch = new Schedules();
+                    
                     foreach (var lesson in workday.Lessons)
                     {
+                        Schedules sch = new Schedules();
                         if (dbc.Groups.FirstOrDefault(item => item.Name == groupName) == null)                                       //Проверка в таблице c группами
                         {
                             Groups gr = new Groups();
@@ -347,10 +367,11 @@ namespace DataBase
                         if (parity)
                             sch.Parity = "Числитель";
                         else sch.Parity = "Знаменатель";
+                        sch.Day = workday.Name.ToString();
+                        dbc.Add(sch);
+                        dbc.SaveChanges();
                     }
-                    sch.Day = workday.Name.ToString();
-                    dbc.Add(sch);
-                    dbc.SaveChanges();
+                    
                 }
             }
         }

@@ -60,7 +60,7 @@ namespace VkBot
         {
             Lesson lesson = bot.RepositoryApi.GetNextLesson(chatId);
 
-            if (lesson != null)
+            if (lesson == null)
                 return false;
 
             if ((lesson.StartTime - DateTime.Now.TimeOfDay).Milliseconds < HeadStartTimerLesson + 100)
