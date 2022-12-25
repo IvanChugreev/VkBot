@@ -6,14 +6,14 @@ namespace DataBase
 {
     public class Protocol : IRepositoryApi<long>
     {
+        FindInDB Find = new FindInDB();
         public bool AddLesson(long chatId, bool numerator, DayOfWeek dayOfWeek, Lesson lesson)
         {
             using (DBConnection dbc = new DBConnection())
             {
                 Schedules sch = new Schedules();
 
-                int idGroup = FindIdGroup(dbc, chatId);
-                if (idGroup != -1)
+                if (Find.IdGroup(dbc, chatId) != -1)
                 {
                     sch.IdGroup = chatId;
                 }
@@ -32,7 +32,7 @@ namespace DataBase
                     dis.Name = lesson.Name;
                     dbc.Add(dis);
                     dbc.SaveChanges();
-                    int DisId = FindIdDiscipline(dbc, lesson);
+                    int DisId = Find.IdDiscipline(dbc, lesson);
                     sch.IdDiscipline = DisId;
                 }
 
@@ -45,7 +45,7 @@ namespace DataBase
                     au.Number = lesson.CabinetNumber;
                     dbc.Add(au);
                     dbc.SaveChanges();
-                    int AuId = FindIdAudience(dbc, lesson);
+                    int AuId = Find.IdAudience(dbc, lesson);
                     sch.IdAudience = AuId;
                 }
 
@@ -58,7 +58,7 @@ namespace DataBase
                     tea.Name = lesson.TeacherName;
                     dbc.Add(tea);
                     dbc.SaveChanges();
-                    int IdTea = FindIdTeacher(dbc, lesson);
+                    int IdTea = Find.IdTeacher(dbc, lesson);
                     sch.IdTeacher = IdTea;
                 }
 
@@ -97,15 +97,13 @@ namespace DataBase
         {
             using (DBConnection dbc = new DBConnection())
             {
-                
-                int idGroup = FindIdGroup(dbc, chatId);
-                if (idGroup == 1)
+                if (Find.IdGroup(dbc, chatId) == 1)
                 {
                     DeleteTimetable(chatId);
                 }
                 FillingInTheWeek(chatId, timetable.Numerator, timetable.GroupName, true);
                 FillingInTheWeek(chatId, timetable.Denominator, timetable.GroupName, false);
-            }                       
+            }
             return true;
         }
 
@@ -117,39 +115,34 @@ namespace DataBase
                 //var deleteGroups = dbc.Groups.Where(item => item.IdChat == idGroup).ToArray();                
                 var deleteTimeTable = dbc.Schedules.Where(item => item.IdGroup == idGroup).ToList();
 
-                foreach(var item in deleteTimeTable)
+                foreach (var item in deleteTimeTable)
                 {
                     dbc.Remove(item);
                 }
                 dbc.SaveChanges();
                 //dbc.RemoveRange(deleteGroups);
                 //dbc.SaveChanges();
-            }   
+            }
         }
 
         public Lesson GetNextLesson(long chatId)
         {
-            var date = DateTime.Now;                                                                            //сегодняшняя дата
-            var dayofweek = date.DayOfWeek;                                                                     // день недели текущий
-            var currentCulture = CultureInfo.CurrentCulture;
-            var weekNumber = currentCulture.Calendar.GetWeekOfYear
-                (
-                    new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day),
-                    currentCulture.DateTimeFormat.CalendarWeekRule,
-                    currentCulture.DateTimeFormat.FirstDayOfWeek
-                );                                                                                              //какая неделя по чётности
+            DateTime date;                                                                           //сегодняшняя дата
+            DayOfWeek dayofweek;                                                                     // день недели текущий
+            int weekNumber;
+            TimeAndWeek(out date, out dayofweek, out weekNumber);
 
             using (DBConnection dbc = new DBConnection())
             {
-                if (FindIdGroup(dbc, chatId) == -1) return null;
+                if (Find.IdGroup(dbc, chatId) == -1) return null;
 
                 List<Schedules> ListSchedules;
 
                 if (weekNumber % 2 != 0)
                 {
                     ListSchedules = (dbc.Schedules.Where(item => item.IdGroup == chatId)
-                                                  .Where(item => item.Day == dayofweek.ToString()))
-                                                  .Where(item => item.Parity == "Числитель").ToList();
+                                                  .Where(item => item.Day == dayofweek.ToString())
+                                                  .Where(item => item.Parity == "Числитель")).ToList();
                 }
                 else
                 {
@@ -157,12 +150,12 @@ namespace DataBase
                                                   .Where(item => item.Day == dayofweek.ToString()))
                                                   .Where(item => item.Parity == "Знаменатель").ToList();
                 }
-                ListSchedules = ListSchedules.OrderBy(item=> item.TimeLesson).ToList();
+                ListSchedules = ListSchedules.OrderBy(item => item.TimeLesson).ToList();
                 var time = CheckingTheTimeOfTheNextLesson(ListSchedules, date);
-                if (time != null)  return FillinInTheLesson(time); 
+                if (time != null) return FillinInTheLesson(time);
             }
             return null;
-            
+
         }
 
 
@@ -170,16 +163,11 @@ namespace DataBase
         public (Workday, DateTime) GetStartTimeOfNextWokrday(long chatId)
         {
             int CountDay = 0;                                                                                           //счётчик дней
-            var date = DateTime.Now;                                                                                    //сегодняшняя дата
-            DayOfWeek dayofweek = date.DayOfWeek+1;                                                                     // день недели текущий
-                                                                    
-            var currentCulture = CultureInfo.CurrentCulture;
-            var weekNumber = currentCulture.Calendar.GetWeekOfYear                                                      //номер недели
-                (
-                    new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day),
-                    currentCulture.DateTimeFormat.CalendarWeekRule,
-                    currentCulture.DateTimeFormat.FirstDayOfWeek
-                );
+            DateTime date;                                                                           //сегодняшняя дата
+            DayOfWeek dayofweek;                                                                     // день недели текущий
+            int weekNumber;
+            TimeAndWeek(out date, out dayofweek, out weekNumber);
+            dayofweek = date.DayOfWeek + 1;
 
             string parity;
             if (weekNumber % 2 != 0)
@@ -189,21 +177,23 @@ namespace DataBase
 
             using (DBConnection dbc = new DBConnection())
             {
-                int id = FindIdGroup(dbc, chatId);
-                if (id == -1) return (null, new DateTime());
-
-
+                if (Find.IdGroup(dbc, chatId) == -1) return (null, new DateTime());
 
                 if (dayofweek == DayOfWeek.Monday && parity == "Числитель")
                     parity = "Знаменатель";
-                else parity = "Числитель";
+                else
+                {
+                    if (dayofweek == DayOfWeek.Monday && parity == "Знаменатель")
+                        parity = "Числитель";
+                }
+               
 
                 List<Schedules> ListSchedules = SearchForTheDayOfTheWeekWithLessons(ref dayofweek, parity, chatId, ref CountDay);
                 if (ListSchedules == null)
                 {
                     if (parity == "Числитель")
                         parity = "Знаменатель";
-                    else parity = "Числитель";                                 
+                    else parity = "Числитель";
                     ListSchedules = SearchForTheDayOfTheWeekWithLessons(ref dayofweek, parity, chatId, ref CountDay);
                     CountDay++;
                 }
@@ -219,18 +209,61 @@ namespace DataBase
                 date = DateTime.Today.Add(TimeSpan.Parse(CountDay.ToString()));                                                  //сколько времени прошло
                 TimeSpan time = wrka.Lessons[0].StartTime;
                 date = date + time;
-                //date.Hour = time.Hours;
 
                 return (wrka, date);
             }
-            
+        }
+
+        public Workday GetTodayWorday(long chatId)
+        {
+            DateTime date;                                                                           //сегодняшняя дата
+            DayOfWeek dayofweek;                                                                     // день недели текущий
+            int weekNumber;
+            TimeAndWeek(out date, out dayofweek,out weekNumber);
+
+            using (DBConnection dbc = new DBConnection())
+            {
+               
+                if (Find.IdGroup(dbc, chatId) == -1) return null;
+
+                List<Schedules> ListSchedules;
+                if (weekNumber % 2 != 0)
+                {
+                    ListSchedules = dbc.Schedules.Where(item => item.IdGroup == chatId)
+                                                 .Where(item => item.Parity == "Числитель")
+                                                 .Where(item => item.Day == dayofweek.ToString()).ToList();
+
+                }
+                else
+                {
+                    ListSchedules = dbc.Schedules.Where(item => item.IdGroup == chatId)
+                                                 .Where(item => item.Parity == "Знаменатель")
+                                                 .Where(item => item.Day == dayofweek.ToString()).ToList();
+                }
+                if (ListSchedules.Count == 0)
+                    return null;
+
+                List<Lesson> ListLesson = new List<Lesson>();
+                foreach (var item in ListSchedules)
+                {
+                    ListLesson.Add(FillinInTheLesson(item));
+                }
+                ListLesson = ListLesson.OrderBy(item => item.StartTime).ToList();
+                Workday wrka = new Workday(dayofweek, ListLesson);
+                return wrka;
+
+            }
+
+
+
+
+            throw new NotImplementedException();
         }
 
 
 
 
-
-        private List<Schedules> SearchForTheDayOfTheWeekWithLessons(ref DayOfWeek dayofweek, string parity, long idGroup,ref int CountDay)
+        private List<Schedules> SearchForTheDayOfTheWeekWithLessons(ref DayOfWeek dayofweek, string parity, long idGroup, ref int CountDay)
         {
             List<Schedules> ListSchedules;
 
@@ -241,19 +274,17 @@ namespace DataBase
                     ListSchedules = dbc.Schedules.Where(item => item.Parity == parity)
                                                  .Where(item => item.Day == i.ToString())
                                                  .Where(item => item.IdGroup == idGroup).ToList();
-                                                 
+
                     CountDay++;
                     if (ListSchedules.Count != 0)
                     {
                         dayofweek = i;
                         return ListSchedules;
                     }
-                        
-                    
                 }
             }
             dayofweek = DayOfWeek.Monday;
-            return null; 
+            return null;
         }
         private Lesson FillinInTheLesson(Schedules sch)
         {
@@ -267,8 +298,6 @@ namespace DataBase
                 return lesson;
             }
         }
-
-
         private Schedules CheckingTheTimeOfTheNextLesson(List<Schedules> list, DateTime date)                                           //определяем время следующей пары
         {
             TimeSpan timeNow = TimeSpan.Parse(date.ToString("HH:mm:ss"));
@@ -297,7 +326,7 @@ namespace DataBase
             {
                 foreach (var workday in week)
                 {
-                    
+
                     foreach (var lesson in workday.Lessons)
                     {
                         Schedules sch = new Schedules();
@@ -308,14 +337,9 @@ namespace DataBase
                             gr.Name = groupName;
                             dbc.Add(gr);
                             dbc.SaveChanges();
-                            //int id = FindIdGroup(dbc, chatId);
                             sch.IdGroup = chatId;
                         }
-                        else
-                        {
-                            //int id = FindIdGroup(dbc, chatId);
-                            sch.IdGroup = chatId;
-                        }
+                        else sch.IdGroup = chatId;
 
                         if (dbc.Disciplines.FirstOrDefault(item => item.Name == lesson.Name) == null)                               //Проверка в таблице c предметами
                         {
@@ -323,12 +347,12 @@ namespace DataBase
                             dis.Name = lesson.Name;
                             dbc.Add(dis);
                             dbc.SaveChanges();
-                            int id = FindIdDiscipline(dbc, lesson);
+                            int id = Find.IdDiscipline(dbc, lesson);
                             sch.IdDiscipline = id;
                         }
                         else
                         {
-                            int id = FindIdDiscipline(dbc, lesson);
+                            int id = Find.IdDiscipline(dbc, lesson);
                             sch.IdDiscipline = id;
                         }
 
@@ -339,12 +363,12 @@ namespace DataBase
                             tea.Name = lesson.TeacherName;
                             dbc.Add(tea);
                             dbc.SaveChanges();
-                            int id = FindIdTeacher(dbc, lesson);
+                            int id = Find.IdTeacher(dbc, lesson);
                             sch.IdTeacher = id;
                         }
                         else
                         {
-                            int id = FindIdTeacher(dbc, lesson);
+                            int id = Find.IdTeacher(dbc, lesson);
                             sch.IdTeacher = id;
                         }
 
@@ -354,12 +378,12 @@ namespace DataBase
                             au.Number = lesson.CabinetNumber;
                             dbc.Add(au);
                             dbc.SaveChanges();
-                            int id = FindIdAudience(dbc, lesson);
+                            int id = Find.IdAudience(dbc, lesson);
                             sch.IdAudience = id;
                         }
                         else
                         {
-                            int id = FindIdAudience(dbc, lesson);
+                            int id = Find.IdAudience(dbc, lesson);
                             sch.IdAudience = id;
                         }
 
@@ -371,58 +395,21 @@ namespace DataBase
                         dbc.Add(sch);
                         dbc.SaveChanges();
                     }
-                    
+
                 }
             }
         }
-
-
-        private int FindIdDiscipline(DBConnection dbc, Lesson lesson)
+        private void TimeAndWeek(out DateTime date,out DayOfWeek dayofweek,out int weekNumber)
         {
-            foreach (var item in dbc.Disciplines)
-            {
-                if (item.Name == lesson.Name)
-                    return item.id.Value;
-            }
-            return -1;
-        }
-
-        private int FindIdTeacher(DBConnection dbc, Lesson lesson)
-        {
-            foreach (var item in dbc.Teachers)
-            {
-                if (item.Name == lesson.TeacherName)
-                    return item.id.Value;
-            }
-            return -1;
-        }
-
-        private int FindIdAudience(DBConnection dbc, Lesson lesson)
-        {
-            foreach (var item in dbc.Audiences)
-            {
-                if (item.Number == lesson.CabinetNumber)
-                    return item.id.Value;
-            }
-            return -1;
-        }
-        private int FindIdGroup(DBConnection dbc, long chatId)
-        {
-            foreach (var item in dbc.Groups)
-            {
-                if (item.IdChat == chatId)
-                    return 1;
-            }
-            return -1;
-        }
-        private int FindIdGroup(DBConnection dbc, long chatId, string groupName)
-        {
-            foreach (var item in dbc.Groups)
-            {
-                if (item.Name == groupName)
-                    return -1;
-            }
-            return -1;
+            date = DateTime.Now;                                                                            //сегодняшняя дата
+            dayofweek = date.DayOfWeek;                                                                     // день недели текущий
+            var currentCulture = CultureInfo.CurrentCulture;
+            weekNumber = currentCulture.Calendar.GetWeekOfYear
+                (
+                    new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day),
+                    currentCulture.DateTimeFormat.CalendarWeekRule,
+                    currentCulture.DateTimeFormat.FirstDayOfWeek
+                );
         }
 
     }
