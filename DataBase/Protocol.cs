@@ -12,12 +12,13 @@ namespace DataBase
             {
                 Schedules sch = new Schedules();
 
-                int id = FindIdGroup(dbc, chatId);
-                if (id != -1)
+                int idGroup = FindIdGroup(dbc, chatId);
+                if (idGroup != -1)
                 {
-                    sch.IdGroup = id;
+                    sch.IdGroup = chatId;
                 }
                 else return false;
+
                 var time = lesson.StartTime;
                 if (dbc.Schedules.FirstOrDefault(item => item.TimeLesson == time && item.Day == dayOfWeek.ToString()) != null)              //проверка есть ли пара уже в этот день в это время
                     return false;
@@ -77,7 +78,6 @@ namespace DataBase
         {
             using (DBConnection dbc = new DBConnection())
             {
-                int id = FindIdGroup(dbc, chatId);
                 string parity;
                 if (numerator == true)
                     parity = "Числитель";
@@ -85,7 +85,7 @@ namespace DataBase
                 var deleteLesson = dbc.Schedules.Where(item => item.Parity == parity)
                                                 .Where(item => item.Day == dayOfWeek.ToString())
                                                 .Where(item => item.TimeLesson == startTimeOfLesson)
-                                                .Where(item => item.IdGroup == id).ToList();
+                                                .Where(item => item.IdGroup == chatId).ToList();
                 if (deleteLesson.Count == 0) return false;                                              //проверка есть ли такая пара
                 dbc.RemoveRange(deleteLesson);
                 dbc.SaveChanges();
@@ -97,8 +97,9 @@ namespace DataBase
         {
             using (DBConnection dbc = new DBConnection())
             {
-                int id = FindIdGroup(dbc, chatId);
-                if (id != -1)
+                
+                int idGroup = FindIdGroup(dbc, chatId);
+                if (idGroup == 1)
                 {
                     DeleteTimetable(chatId);
                 }
@@ -108,23 +109,21 @@ namespace DataBase
             return true;
         }
 
-        public void DeleteTimetable(long chatId)
+        public void DeleteTimetable(long idGroup)
         {
             using (DBConnection dbc = new DBConnection())
             {
-                int id = FindIdGroup(dbc,chatId);
 
-
-                var deleteGroups = dbc.Groups.Where(item => item.id_Chat == chatId).ToArray();                
-                var deleteTimeTable = dbc.Schedules.Where(item => item.IdGroup == id).ToList();
+                //var deleteGroups = dbc.Groups.Where(item => item.IdChat == idGroup).ToArray();                
+                var deleteTimeTable = dbc.Schedules.Where(item => item.IdGroup == idGroup).ToList();
 
                 foreach(var item in deleteTimeTable)
                 {
                     dbc.Remove(item);
                 }
                 dbc.SaveChanges();
-                dbc.RemoveRange(deleteGroups);
-                dbc.SaveChanges();
+                //dbc.RemoveRange(deleteGroups);
+                //dbc.SaveChanges();
             }   
         }
 
@@ -142,24 +141,25 @@ namespace DataBase
 
             using (DBConnection dbc = new DBConnection())
             {
-                int id = FindIdGroup(dbc, chatId);
+                if (FindIdGroup(dbc, chatId) == -1) return null;
+
                 List<Schedules> ListSchedules;
 
                 if (weekNumber % 2 != 0)
                 {
-                    ListSchedules = (dbc.Schedules.Where(item => item.IdGroup == id)
+                    ListSchedules = (dbc.Schedules.Where(item => item.IdGroup == chatId)
                                                   .Where(item => item.Day == dayofweek.ToString()))
                                                   .Where(item => item.Parity == "Числитель").ToList();
                 }
                 else
                 {
-                    ListSchedules = (dbc.Schedules.Where(item => item.IdGroup == id)
+                    ListSchedules = (dbc.Schedules.Where(item => item.IdGroup == chatId)
                                                   .Where(item => item.Day == dayofweek.ToString()))
                                                   .Where(item => item.Parity == "Знаменатель").ToList();
                 }
                 ListSchedules = ListSchedules.OrderBy(item=> item.TimeLesson).ToList();
-                var a = CheckingTheTimeOfTheNextLesson(ListSchedules, date);
-                if (a != null)  return FillinInTheLesson(a); 
+                var time = CheckingTheTimeOfTheNextLesson(ListSchedules, date);
+                if (time != null)  return FillinInTheLesson(time); 
             }
             return null;
             
@@ -198,13 +198,13 @@ namespace DataBase
                     parity = "Знаменатель";
                 else parity = "Числитель";
 
-                List<Schedules> ListSchedules = SearchForTheDayOfTheWeekWithLessons(ref dayofweek, parity, id, ref CountDay);
+                List<Schedules> ListSchedules = SearchForTheDayOfTheWeekWithLessons(ref dayofweek, parity, chatId, ref CountDay);
                 if (ListSchedules == null)
                 {
                     if (parity == "Числитель")
                         parity = "Знаменатель";
                     else parity = "Числитель";                                 
-                    ListSchedules = SearchForTheDayOfTheWeekWithLessons(ref dayofweek, parity, id, ref CountDay);
+                    ListSchedules = SearchForTheDayOfTheWeekWithLessons(ref dayofweek, parity, chatId, ref CountDay);
                     CountDay++;
                 }
 
@@ -230,7 +230,7 @@ namespace DataBase
 
 
 
-        private List<Schedules> SearchForTheDayOfTheWeekWithLessons(ref DayOfWeek dayofweek, string parity, int idGroup,ref int CountDay)
+        private List<Schedules> SearchForTheDayOfTheWeekWithLessons(ref DayOfWeek dayofweek, string parity, long idGroup,ref int CountDay)
         {
             List<Schedules> ListSchedules;
 
@@ -301,20 +301,20 @@ namespace DataBase
                     foreach (var lesson in workday.Lessons)
                     {
                         Schedules sch = new Schedules();
-                        if (dbc.Groups.FirstOrDefault(item => item.Name == groupName) == null)                                       //Проверка в таблице c группами
+                        if (dbc.Groups.FirstOrDefault(item => item.IdChat == chatId) == null)                                       //Проверка в таблице c группами
                         {
                             Groups gr = new Groups();
-                            gr.id_Chat = chatId;
+                            gr.IdChat = chatId;
                             gr.Name = groupName;
                             dbc.Add(gr);
                             dbc.SaveChanges();
-                            int id = FindIdGroup(dbc, chatId);
-                            sch.IdGroup = id;
+                            //int id = FindIdGroup(dbc, chatId);
+                            sch.IdGroup = chatId;
                         }
                         else
                         {
-                            int id = FindIdGroup(dbc, chatId);
-                            sch.IdGroup = id;
+                            //int id = FindIdGroup(dbc, chatId);
+                            sch.IdGroup = chatId;
                         }
 
                         if (dbc.Disciplines.FirstOrDefault(item => item.Name == lesson.Name) == null)                               //Проверка в таблице c предметами
@@ -410,12 +410,20 @@ namespace DataBase
         {
             foreach (var item in dbc.Groups)
             {
-                if (item.id_Chat == chatId)
-                    return item.id.Value;
+                if (item.IdChat == chatId)
+                    return 1;
             }
             return -1;
         }
-
+        private int FindIdGroup(DBConnection dbc, long chatId, string groupName)
+        {
+            foreach (var item in dbc.Groups)
+            {
+                if (item.Name == groupName)
+                    return -1;
+            }
+            return -1;
+        }
 
     }
 }
