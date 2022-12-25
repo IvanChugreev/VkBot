@@ -7,6 +7,8 @@ namespace VkBot
     // T - тип данных для Id чата получаемого из мессенджера
     class UserTimers<T>
     {
+        private readonly Timer tmpTimerLesson;
+        private readonly Timer tmpTimerWorkday;
         private readonly Bot<T> bot;
         private readonly T chatId;
 
@@ -41,6 +43,14 @@ namespace VkBot
             TimerWorkday = new Timer() { AutoReset = false };
 
             TimerWorkday.Elapsed += TimerWorkday_Elapsed;
+
+            tmpTimerLesson = new Timer() { AutoReset = false };
+
+            tmpTimerLesson.Elapsed += (sender, e) => UpdateTimerLesson();
+
+            tmpTimerWorkday = new Timer() { AutoReset = false };
+
+            tmpTimerWorkday.Elapsed += (sender, e) => UpdateTimerWokrday();
         }
 
         public void StartTimerLesson()
@@ -67,15 +77,15 @@ namespace VkBot
             {
                 bot.MessangerApi.SendTextMessage(chatId, lesson.ToString());
 
-                System.Threading.Thread.Sleep((lesson.StartTime - DateTime.Now.TimeOfDay).Milliseconds);
+                tmpTimerLesson.Interval = (lesson.StartTime - DateTime.Now.TimeOfDay).TotalMilliseconds;
 
-                UpdateTimerLesson();
+                tmpTimerLesson.Start();
             }
             else
             {
                 TextOfMessageAboutNextLesson = lesson.ToString();
 
-                TimerLesson.Interval = (lesson.StartTime - DateTime.Now.TimeOfDay).Milliseconds - HeadStartTimerLesson;
+                TimerLesson.Interval = (lesson.StartTime - DateTime.Now.TimeOfDay).TotalMilliseconds - HeadStartTimerLesson;
             }
 
             return true;
@@ -105,18 +115,18 @@ namespace VkBot
 
                 StartTimerLesson();
 
-                System.Threading.Thread.Sleep((startTimeOfWorkday - DateTime.Now).Milliseconds);
+                tmpTimerWorkday.Interval = (startTimeOfWorkday - DateTime.Now).TotalMilliseconds;
 
-                UpdateTimerWokrday();
+                tmpTimerWorkday.Start();
             }
             else
             {
                 TextOfMessageAboutNextWorkday = workday.ToString();
 
-                TimerWorkday.Interval = (startTimeOfWorkday - DateTime.Now).Milliseconds - HeadStartTimerWorkday;
+                TimerWorkday.Interval = (startTimeOfWorkday - DateTime.Now).TotalMilliseconds - HeadStartTimerWorkday;
 
                 StartTimerLesson();
-            }    
+            }
         }
 
         public void Stop()

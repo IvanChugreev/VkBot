@@ -5,7 +5,6 @@ using System.Net;
 using System.Threading.Tasks;
 using TypesUsedByBot;
 using System.Text;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
 
 namespace VkBot
 {
@@ -31,6 +30,7 @@ namespace VkBot
                 [".new"] = NewTimetableCommandAsync,
                 [".add"] = AddLessonCommandAsync,
                 [".del"] = DeleteLessonCommandAsync,
+                [".today"] = TodayCommandAsync,
                 [".example"] = ExampleCommandAsync
             };
         }
@@ -45,6 +45,8 @@ namespace VkBot
                         ".start - подписаться на рассылку уведомлений",
                         ".stop - отписаться от рассылки уведомлений",
                         ".add - добавить занятие в расписание",
+                        ".del - удаляет занятие в расписании",
+                        ".today - вывести расписание на сегодня",
                         ".example - пример расписания"
                 }));
 
@@ -113,7 +115,7 @@ namespace VkBot
 
                 File.Delete(documents[0].Title);
 
-                bot.MessangerApi.SendTextMessage(message.ChatId, "Добавлено новое рассписание");
+                bot.MessangerApi.SendTextMessage(message.ChatId, "Добавлено новое расписание");
             }
         }
 
@@ -164,5 +166,14 @@ namespace VkBot
         }
 
         private async Task DeleteLessonCommandAsync(MessageParams<T> message) => await Task.Run(() => DeleteLessonCommand(message));
+
+        private void TodayCommand(MessageParams<T> message)
+        {
+            Workday workday = bot.RepositoryApi.GetTodayWorday(message.ChatId);
+
+            bot.MessangerApi.SendTextMessage(message.ChatId, workday == null ? "Сегодня нет занятий" : workday.ToString());
+        }
+
+        private async Task TodayCommandAsync(MessageParams<T> message) => await Task.Run(() => TodayCommand(message));
     }
 }
