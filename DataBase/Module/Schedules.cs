@@ -14,7 +14,7 @@ namespace DataBase
         public int? id { get; set; }
         public string Day { get; set; }
         public string Parity { get; set; }
-        public int IdGroup { get; set; }
+        public long IdGroup { get; set; }
         public int IdAudience { get; set; }
         public int IdDiscipline { get; set; }
         public int IdTeacher { get; set; }

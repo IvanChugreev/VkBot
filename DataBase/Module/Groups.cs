@@ -11,9 +11,9 @@ namespace DataBase
     public partial class Groups
     {
         [Key]
-        public int? id { get; set; }
+        public long IdChat { get; set; }
         public string Name { get; set; }
-        public long id_Chat { get; set; }
+        
     }
     public partial class DBConnection : DbContext
     {
