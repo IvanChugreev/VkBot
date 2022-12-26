@@ -129,7 +129,13 @@ namespace VkBot
                 DownloadDocument(documents[0]);
 
                 try { bot.RepositoryApi.NewTimetable(message.ChatId, ParserTxt.ParseIntoTimetable(EncodingFile(documents[0].Title))); }
-                catch (ArgumentException) { bot.MessangerApi.SendTextMessage(message.ChatId, "Расписание не распознано, проверьте правильно ли вы записали расписание (сравните с примером .example)"); }
+                catch (ArgumentException) 
+                { 
+                    bot.MessangerApi.SendTextMessage(
+                    message.ChatId, 
+                    "Расписание не распознано, проверьте правильно ли вы записали расписание (сравните с примером .example)");
+                    return;
+                }
 
                 File.Delete(documents[0].Title);
 
@@ -159,30 +165,38 @@ namespace VkBot
 
         private void AddLessonCommand(MessageParams<T> message)
         {
-            string[] words = message.Text.Split(' ');
+            try
+            {
+                string[] words = message.Text.Split(' ');
 
-            bool result = bot.RepositoryApi.AddLesson(
-                message.ChatId,
-                words[1] == "числитель", 
-                ParserTxt.ParseIntoDayOfWeek(words[2]) ?? throw new ArgumentException("Некорректные данные команды"), 
-                ParserTxt.ParseIntoLesson(words[3]));
+                bool result = bot.RepositoryApi.AddLesson(
+                    message.ChatId,
+                    words[1] == "числитель",
+                    ParserTxt.ParseIntoDayOfWeek(words[2]) ?? throw new ArgumentException("Некорректные данные команды"),
+                    ParserTxt.ParseIntoLesson(words[3]));
 
-            bot.MessangerApi.SendTextMessage(message.ChatId, result ? "Занятие добавлено" : "Данное время занято (или вы ещё не создали расписание)");
+                bot.MessangerApi.SendTextMessage(message.ChatId, result ? "Занятие добавлено" : "Данное время занято (или вы ещё не создали расписание)");
+            }
+            catch { bot.MessangerApi.SendTextMessage(message.ChatId, "Некорректные данные команды, посмотрите пример .example"); }
         }
 
         private async Task AddLessonCommandAsync(MessageParams<T> message) => await Task.Run(() => AddLessonCommand(message));
 
         private void DeleteLessonCommand(MessageParams<T> message)
         {
-            string[] words = message.Text.Split(' ');
+            try
+            {
+                string[] words = message.Text.Split(' ');
 
-            bool result = bot.RepositoryApi.DeleteLesson(
-                message.ChatId,
-                words[1] == "числитель",
-                ParserTxt.ParseIntoDayOfWeek(words[2]) ?? throw new ArgumentException("Некорректные данные команды"),
-                TimeSpan.Parse(words[3]));
+                bool result = bot.RepositoryApi.DeleteLesson(
+                    message.ChatId,
+                    words[1] == "числитель",
+                    ParserTxt.ParseIntoDayOfWeek(words[2]) ?? throw new ArgumentException("Некорректные данные команды"),
+                    TimeSpan.Parse(words[3]));
 
-            bot.MessangerApi.SendTextMessage(message.ChatId, result ? "Занятие удалено" : "Занятие не найдено");
+                bot.MessangerApi.SendTextMessage(message.ChatId, result ? "Занятие удалено" : "Занятие не найдено");
+            }
+            catch { bot.MessangerApi.SendTextMessage(message.ChatId, "Некорректные данные команды, посмотрите пример .example"); }
         }
 
         private async Task DeleteLessonCommandAsync(MessageParams<T> message) => await Task.Run(() => DeleteLessonCommand(message));
