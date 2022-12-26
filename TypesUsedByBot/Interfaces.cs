@@ -11,7 +11,7 @@
     // T - тип данных для Id чата 
     public interface IRepositoryApi<T>
     {
-        Workday GetTodayWorday(T chatId);
+        Workday GetWorkdayForDate(T chatId, DateTime date);
 
         Lesson GetNextLesson(T chatId);
 

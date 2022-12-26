@@ -214,12 +214,16 @@ namespace DataBase
             }
         }
 
-        public Workday GetTodayWorday(long chatId)
+        public Workday GetWorkdayForDate(long chatId, DateTime date)
         {
-            DateTime date;                                                                           //сегодняшняя дата
-            DayOfWeek dayofweek;                                                                     // день недели текущий
-            int weekNumber;
-            TimeAndWeek(out date, out dayofweek,out weekNumber);
+            DayOfWeek dayofweek = date.DayOfWeek;
+            var currentCulture = CultureInfo.CurrentCulture;
+            int weekNumber = currentCulture.Calendar.GetWeekOfYear
+                (
+                    new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day),
+                    currentCulture.DateTimeFormat.CalendarWeekRule,
+                    currentCulture.DateTimeFormat.FirstDayOfWeek
+                );
 
             using (DBConnection dbc = new DBConnection())
             {
@@ -253,11 +257,6 @@ namespace DataBase
                 return wrka;
 
             }
-
-
-
-
-            throw new NotImplementedException();
         }
 
 

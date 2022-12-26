@@ -13,6 +13,7 @@ namespace VkBot
     {
         private readonly Bot<T> bot;
         private readonly Dictionary<T, UserTimers<T>> timersByChatIdDict;
+        private readonly Dictionary<T, bool> haveTimetableByChatIdDict;
 
         public Dictionary<string, Func<MessageParams<T>, Task>> CommandByMsgDict { get; }
 
@@ -21,6 +22,8 @@ namespace VkBot
             this.bot = bot;
 
             timersByChatIdDict = new Dictionary<T, UserTimers<T>>();
+
+            haveTimetableByChatIdDict = new Dictionary<T, bool>();
 
             CommandByMsgDict = new Dictionary<string, Func<MessageParams<T>, Task>>()
             {
@@ -56,6 +59,7 @@ namespace VkBot
             => bot.MessangerApi.SendTextMessage(
                 message.ChatId,
                 string.Join("\r\n", new string[] {
+                        "- Пример расписания:",
                         "ИБ-3",
                         "Числитель",
                         "Пн",
@@ -66,20 +70,31 @@ namespace VkBot
                         "Знаменатель",
                         "Сб",
                         "9:00-ОС-Савинов-412",
-                        "10:45-ОС-Савинов-412"
+                        "10:45-ОС-Савинов-412",
+                        "- Пример добавления занятия:",
+                        ".add числитель Пн 15:00-Матстат-Гринев-414",
+                        "- Пример удаления занятия:",
+                        ".del числитель Пн 15:00"
                 }));
 
         private async Task ExampleCommandAsync(MessageParams<T> message) => await Task.Run(() => ExampleCommand(message));
 
         private void StartCommand(MessageParams<T> message)
         {
+            if (!haveTimetableByChatIdDict.ContainsKey(message.ChatId))
+            {
+                bot.MessangerApi.SendTextMessage(message.ChatId, "Сначала создайте расписание .new");
+
+                return;
+            }
+
             if (timersByChatIdDict.ContainsKey(message.ChatId))
                 bot.MessangerApi.SendTextMessage(message.ChatId, "Вы уже подписаны на рассылку расписания");
             else
             {
                 UserTimers<T> userTimers = new UserTimers<T>(bot, message.ChatId);
 
-                userTimers.StartTimerWorkday();
+                userTimers.Start();
 
                 timersByChatIdDict[message.ChatId] = userTimers;
 
@@ -111,11 +126,14 @@ namespace VkBot
             {
                 DownloadDocument(documents[0]);
 
-                bot.RepositoryApi.NewTimetable(message.ChatId, ParserTxt.ParseIntoTimetable(EncodingFile(documents[0].Title)));
+                try { bot.RepositoryApi.NewTimetable(message.ChatId, ParserTxt.ParseIntoTimetable(EncodingFile(documents[0].Title))); }
+                catch (ArgumentException) { bot.MessangerApi.SendTextMessage(message.ChatId, "Расписание не распознано, проверьте правильно ли вы записали расписание (сравните с примером .example)"); }
 
                 File.Delete(documents[0].Title);
 
                 bot.MessangerApi.SendTextMessage(message.ChatId, "Добавлено новое расписание");
+
+                haveTimetableByChatIdDict[message.ChatId] = true;
             }
         }
 
@@ -169,7 +187,7 @@ namespace VkBot
 
         private void TodayCommand(MessageParams<T> message)
         {
-            Workday workday = bot.RepositoryApi.GetTodayWorday(message.ChatId);
+            Workday workday = bot.RepositoryApi.GetWorkdayForDate(message.ChatId, DateTime.Today);
 
             bot.MessangerApi.SendTextMessage(message.ChatId, workday == null ? "Сегодня нет занятий" : workday.ToString());
         }
