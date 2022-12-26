@@ -110,6 +110,8 @@ namespace VkBot
             {
                 timersByChatIdDict[message.ChatId].Stop();
 
+                timersByChatIdDict.Remove(message.ChatId);
+
                 bot.MessangerApi.SendTextMessage(message.ChatId, "Вы отказались от рассылки расписания");
             }
             else
